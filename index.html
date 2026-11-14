@@ -1,0 +1,264 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <title>Su historia ❤️</title>
+
+  <!-- A-Frame y MindAR -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #171411;
+      font-family: Arial, sans-serif;
+    }
+
+    #panel {
+      position: fixed;
+      z-index: 20;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 22px 15px;
+      text-align: center;
+      color: white;
+      background: linear-gradient(#171411e8, transparent);
+    }
+
+    h2 {
+      margin: 4px 0 8px;
+      font-size: 24px;
+    }
+
+    p {
+      font-size: 14px;
+      margin: 8px 0;
+    }
+
+    button {
+      border: none;
+      border-radius: 25px;
+      padding: 13px 24px;
+      margin: 7px;
+      background: #d9b77e;
+      color: #241b12;
+      font-weight: bold;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    #soundButton {
+      display: none;
+    }
+
+    #status {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+
+    #ar-scene {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .a-enter-vr {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="panel">
+    <h2>Su historia ❤️</h2>
+    <p>Una sorpresa especial para ti</p>
+
+    <button id="startButton">
+      Iniciar experiencia
+    </button>
+
+    <button id="soundButton">
+      Activar sonido 🔊
+    </button>
+
+    <div id="status">
+      Pulsa iniciar y enfoca la ilustración
+    </div>
+  </div>
+
+  <!-- Video -->
+  <video
+    id="weddingVideo"
+    src="./video.mp4"
+    preload="auto"
+    loop
+    muted
+    playsinline
+    webkit-playsinline
+    crossorigin="anonymous">
+  </video>
+
+  <!-- Escena de realidad aumentada -->
+  <a-scene
+    id="ar-scene"
+    mindar-image="
+      imageTargetSrc: ./marcador.mind;
+      autoStart: false;
+      uiLoading: no;
+      uiScanning: yes;
+      uiError: yes;
+    "
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+      <video
+        id="videoAsset"
+        src="./video.mp4"
+        preload="auto"
+        loop
+        muted
+        playsinline
+        webkit-playsinline
+        crossorigin="anonymous">
+      </video>
+    </a-assets>
+
+    <!-- Primer marcador del archivo .mind -->
+    <a-entity id="target" mindar-image-target="targetIndex: 0">
+
+      <!-- Video centrado sobre la ilustración -->
+      <a-video
+        src="#videoAsset"
+        width="1"
+        height="0.5625"
+        position="0 0 0.02"
+        rotation="0 0 0">
+      </a-video>
+
+    </a-entity>
+
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false">
+    </a-camera>
+
+  </a-scene>
+
+  <script>
+    const scene = document.querySelector("#ar-scene");
+    const video = document.querySelector("#videoAsset");
+
+    const startButton = document.querySelector("#startButton");
+    const soundButton = document.querySelector("#soundButton");
+    const status = document.querySelector("#status");
+
+    const target = document.querySelector("#target");
+
+    let started = false;
+    let visible = false;
+
+    // Iniciar cámara al pulsar el botón
+    startButton.addEventListener("click", async () => {
+
+      if (started) return;
+
+      try {
+        status.textContent = "Preparando cámara...";
+
+        await scene.systems["mindar-image-system"].start();
+
+        started = true;
+        startButton.style.display = "none";
+
+        status.textContent =
+          "Cámara activa. Enfoca la ilustración.";
+
+      } catch (error) {
+
+        console.error("Error al iniciar MindAR:", error);
+
+        status.textContent =
+          "No se pudo activar la cámara. Revisa los permisos.";
+
+      }
+    });
+
+    // Cuando reconoce la ilustración
+    target.addEventListener("targetFound", async () => {
+
+      visible = true;
+
+      status.textContent =
+        "¡Tu sorpresa está aquí! ❤️";
+
+      try {
+        await video.play();
+      } catch (error) {
+        status.textContent =
+          "Ilustración reconocida. Pulsa activar sonido para reproducir.";
+        console.error(error);
+      }
+
+      soundButton.style.display = "inline-block";
+
+    });
+
+    // Cuando deja de reconocer la ilustración
+    target.addEventListener("targetLost", () => {
+
+      visible = false;
+
+      video.pause();
+
+      status.textContent =
+        "Vuelve a enfocar la ilustración";
+
+      soundButton.style.display = "none";
+
+    });
+
+    // Activar sonido mediante interacción del usuario
+    soundButton.addEventListener("click", async () => {
+
+      video.muted = false;
+
+      try {
+        if (visible) {
+          await video.play();
+        }
+
+        soundButton.textContent = "Sonido activado 🔊";
+
+      } catch (error) {
+
+        console.error(error);
+        status.textContent =
+          "No se pudo activar el sonido.";
+
+      }
+
+    });
+
+    // Mensajes de carga
+    scene.addEventListener("loaded", () => {
+      console.log("Escena AR cargada correctamente");
+    });
+
+  </script>
+
+</body>
+</html>
