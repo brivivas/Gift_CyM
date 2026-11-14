@@ -61,6 +61,9 @@
       line-height: 1.6;
       max-width: 460px;
       margin: 12px auto;
+      background: rgba(23, 20, 17, 0.85);
+      padding: 15px;
+      border-radius: 15px;
     }
 
     button {
@@ -87,27 +90,24 @@
       z-index: 1;
     }
 
+    /* Después de iniciar, el panel deja ver la cámara */
+    #panel.ar-active {
+      background: transparent;
+      pointer-events: none;
+    }
+
+    #panel.ar-active h2,
+    #panel.ar-active #intro {
+      display: none;
+    }
+
+    #panel.ar-active #soundButton {
+      pointer-events: auto;
+    }
+
     .a-enter-vr {
       display: none !important;
     }
-    #panel.ar-active {
-  background: transparent;
-  pointer-events: none;
-}
-
-#panel.ar-active h2 {
-  display: none;
-}
-
-#panel.ar-active #soundButton {
-  pointer-events: auto;
-}
-
-#personalMessage {
-  background: rgba(23, 20, 17, 0.75);
-  padding: 15px;
-  border-radius: 15px;
-}
   </style>
 </head>
 
@@ -142,7 +142,6 @@
 
   </div>
 
-  <!-- Escena de realidad aumentada -->
   <a-scene
     id="ar-scene"
     mindar-image="
@@ -194,6 +193,7 @@
     const scene = document.querySelector("#ar-scene");
     const video = document.querySelector("#videoAsset");
 
+    const panel = document.querySelector("#panel");
     const startButton = document.querySelector("#startButton");
     const soundButton = document.querySelector("#soundButton");
     const status = document.querySelector("#status");
@@ -206,7 +206,7 @@
     let started = false;
     let visible = false;
 
-    // Iniciar cámara y habilitar sonido con la interacción del usuario
+    // Iniciar cámara y experiencia
     startButton.addEventListener("click", async () => {
 
       if (started) return;
@@ -214,15 +214,18 @@
       try {
         status.textContent = "Preparando la sorpresa...";
 
-        // El clic del usuario permite intentar reproducir con sonido
         video.muted = false;
         video.volume = 1;
 
         await scene.systems["mindar-image-system"].start();
 
         started = true;
+
         startButton.style.display = "none";
         intro.style.display = "none";
+
+        // Mostrar la cámara sin el fondo oscuro del panel
+        panel.classList.add("ar-active");
 
         status.textContent =
           "Ahora enfoca la ilustración de tu invitación ❤️";
@@ -248,6 +251,7 @@
       try {
         video.muted = false;
         video.volume = 1;
+
         await video.play();
 
         soundButton.style.display = "none";
@@ -257,6 +261,7 @@
         console.error("El navegador bloqueó el sonido:", error);
 
         soundButton.style.display = "inline-block";
+
         status.textContent =
           "Toca el botón para escuchar la canción.";
 
@@ -272,6 +277,7 @@
       video.pause();
 
       personalMessage.style.display = "none";
+
       status.textContent =
         "Vuelve a enfocar la ilustración ❤️";
 
@@ -279,7 +285,7 @@
 
     });
 
-    // Alternativa si el navegador bloquea el sonido automático
+    // Activar sonido manualmente si es necesario
     soundButton.addEventListener("click", async () => {
 
       video.muted = false;
@@ -293,9 +299,12 @@
         soundButton.style.display = "none";
 
       } catch (error) {
+
         console.error(error);
+
         status.textContent =
           "No se pudo activar el sonido. Inténtalo nuevamente.";
+
       }
 
     });
