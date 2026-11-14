@@ -6,9 +6,8 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-  <title>Su historia ❤️</title>
+  <title>Nuestra historia ❤️</title>
 
-  <!-- A-Frame y MindAR -->
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
@@ -22,39 +21,57 @@
       overflow: hidden;
       background: #171411;
       font-family: Arial, sans-serif;
+      color: white;
     }
 
     #panel {
       position: fixed;
       z-index: 20;
-      top: 0;
-      left: 0;
-      width: 100%;
-      padding: 22px 15px;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 25px;
       text-align: center;
-      color: white;
-      background: linear-gradient(#171411e8, transparent);
+      background: #171411;
     }
 
     h2 {
-      margin: 4px 0 8px;
-      font-size: 24px;
+      font-size: 27px;
+      margin: 0 0 15px;
     }
 
-    p {
-      font-size: 14px;
-      margin: 8px 0;
+    #intro {
+      font-size: 17px;
+      line-height: 1.5;
+      margin: 8px 0 20px;
+    }
+
+    #status {
+      font-size: 17px;
+      line-height: 1.5;
+      margin: 15px auto;
+      max-width: 450px;
+    }
+
+    #personalMessage {
+      display: none;
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 460px;
+      margin: 12px auto;
     }
 
     button {
       border: none;
       border-radius: 25px;
-      padding: 13px 24px;
-      margin: 7px;
+      padding: 14px 25px;
+      margin: 8px;
       background: #d9b77e;
       color: #241b12;
       font-weight: bold;
-      font-size: 15px;
+      font-size: 16px;
       cursor: pointer;
     }
 
@@ -62,14 +79,12 @@
       display: none;
     }
 
-    #status {
-      margin-top: 8px;
-      font-size: 13px;
-    }
-
     #ar-scene {
+      position: fixed;
+      inset: 0;
       width: 100vw;
       height: 100vh;
+      z-index: 1;
     }
 
     .a-enter-vr {
@@ -81,33 +96,33 @@
 <body>
 
   <div id="panel">
-    <h2>Su historia ❤️</h2>
-    <p>Una sorpresa especial para ti</p>
+
+    <h2>Nuestra historia ❤️</h2>
+
+    <div id="intro">
+      Una sorpresa especial para ti.<br>
+      ¡Sube el volumen! 🔊
+    </div>
 
     <button id="startButton">
       Iniciar experiencia
     </button>
 
+    <div id="status">
+      Enfoca la ilustración de la invitación.
+    </div>
+
+    <div id="personalMessage">
+      <strong>¡Tu sorpresa está aquí! ❤️</strong>
+      <br><br>
+      Esta canción me recuerda a ambos, del día de su boda cuando le bailaste esta canción a Chris.
+    </div>
+
     <button id="soundButton">
       Activar sonido 🔊
     </button>
 
-    <div id="status">
-      Pulsa iniciar y enfoca la ilustración
-    </div>
   </div>
-
-  <!-- Video -->
-  <video
-    id="weddingVideo"
-    src="./video.mp4"
-    preload="auto"
-    loop
-    muted
-    playsinline
-    webkit-playsinline
-    crossorigin="anonymous">
-  </video>
 
   <!-- Escena de realidad aumentada -->
   <a-scene
@@ -116,11 +131,11 @@
       imageTargetSrc: ./marcador.mind;
       autoStart: false;
       uiLoading: no;
-      uiScanning: yes;
+      uiScanning: no;
       uiError: yes;
     "
     color-space="sRGB"
-    renderer="colorManagement: true, physicallyCorrectLights"
+    renderer="colorManagement: true"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false">
 
@@ -137,16 +152,15 @@
       </video>
     </a-assets>
 
-    <!-- Primer marcador del archivo .mind -->
-    <a-entity id="target" mindar-image-target="targetIndex: 0">
+    <a-entity
+      id="target"
+      mindar-image-target="targetIndex: 0">
 
-      <!-- Video centrado sobre la ilustración -->
       <a-video
         src="#videoAsset"
         width="1"
         height="0.5625"
-        position="0 0 0.02"
-        rotation="0 0 0">
+        position="0 0 0.02">
       </a-video>
 
     </a-entity>
@@ -165,27 +179,35 @@
     const startButton = document.querySelector("#startButton");
     const soundButton = document.querySelector("#soundButton");
     const status = document.querySelector("#status");
+    const intro = document.querySelector("#intro");
+    const personalMessage =
+      document.querySelector("#personalMessage");
 
     const target = document.querySelector("#target");
 
     let started = false;
     let visible = false;
 
-    // Iniciar cámara al pulsar el botón
+    // Iniciar cámara y habilitar sonido con la interacción del usuario
     startButton.addEventListener("click", async () => {
 
       if (started) return;
 
       try {
-        status.textContent = "Preparando cámara...";
+        status.textContent = "Preparando la sorpresa...";
+
+        // El clic del usuario permite intentar reproducir con sonido
+        video.muted = false;
+        video.volume = 1;
 
         await scene.systems["mindar-image-system"].start();
 
         started = true;
         startButton.style.display = "none";
+        intro.style.display = "none";
 
         status.textContent =
-          "Cámara activa. Enfoca la ilustración.";
+          "Ahora enfoca la ilustración de tu invitación ❤️";
 
       } catch (error) {
 
@@ -202,19 +224,25 @@
 
       visible = true;
 
-      status.textContent =
-        "¡Tu sorpresa está aquí! ❤️
-        Esta canción me recuerda a ambos, del día de su boda cuando le bailaste esta canción a Chris";
+      status.textContent = "";
+      personalMessage.style.display = "block";
 
       try {
+        video.muted = false;
+        video.volume = 1;
         await video.play();
-      } catch (error) {
-        status.textContent =
-          "Ilustración reconocida. Pulsa activar sonido para reproducir.";
-        console.error(error);
-      }
 
-      soundButton.style.display = "inline-block";
+        soundButton.style.display = "none";
+
+      } catch (error) {
+
+        console.error("El navegador bloqueó el sonido:", error);
+
+        soundButton.style.display = "inline-block";
+        status.textContent =
+          "Toca el botón para escuchar la canción.";
+
+      }
 
     });
 
@@ -225,38 +253,37 @@
 
       video.pause();
 
+      personalMessage.style.display = "none";
       status.textContent =
-        "Vuelve a enfocar la ilustración";
+        "Vuelve a enfocar la ilustración ❤️";
 
       soundButton.style.display = "none";
 
     });
 
-    // Activar sonido mediante interacción del usuario
+    // Alternativa si el navegador bloquea el sonido automático
     soundButton.addEventListener("click", async () => {
 
       video.muted = false;
+      video.volume = 1;
 
       try {
         if (visible) {
           await video.play();
         }
 
-        soundButton.textContent = "Sonido activado 🔊";
+        soundButton.style.display = "none";
 
       } catch (error) {
-
         console.error(error);
         status.textContent =
-          "No se pudo activar el sonido.";
-
+          "No se pudo activar el sonido. Inténtalo nuevamente.";
       }
 
     });
 
-    // Mensajes de carga
     scene.addEventListener("loaded", () => {
-      console.log("Escena AR cargada correctamente");
+      console.log("Experiencia WebAR cargada");
     });
 
   </script>
